@@ -1,0 +1,33 @@
+name: "Check Version Exists on npm"
+description: "Checks if a specific version of a package already exists on npm registry"
+inputs:
+  package-name:
+    description: "npm package name (e.g. @scope/my-package)"
+    required: true
+  version:
+    description: "Version to check (e.g. 1.0.0)"
+    required: true
+outputs:
+  exists:
+    description: "Whether the version already exists (true/false)"
+    value: ${{ steps.check.outputs.exists }}
+runs:
+  using: "composite"
+  steps:
+    - name: Check if version exists
+      id: check
+      shell: bash
+      run: |
+        PACKAGE_NAME="${{ inputs.package-name }}"
+        VERSION="${{ inputs.version }}"
+        echo "Checking if ${PACKAGE_NAME}@${VERSION} exists on npm..."
+
+        HTTP_STATUS=$(npm view "${PACKAGE_NAME}@${VERSION}" version 2>/dev/null && echo "found" || echo "not_found")
+
+        if [ "$HTTP_STATUS" = "found" ]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+          echo "⚠️ Version ${VERSION} already exists on npm!"
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+          echo "✅ Version ${VERSION} is available"
+        fi

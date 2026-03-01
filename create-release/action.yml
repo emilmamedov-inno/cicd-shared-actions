@@ -1,0 +1,39 @@
+name: "Create GitHub Release"
+description: "Creates a Git tag and GitHub Release with auto-generated notes"
+inputs:
+  version:
+    description: "Version to release (e.g. 1.0.0, without v prefix)"
+    required: true
+  github-token:
+    description: "GitHub token for creating releases"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Configure Git
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Create and push tag
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        TAG="v${{ inputs.version }}"
+        echo "Creating tag ${TAG}..."
+        git tag -a "${TAG}" -m "Release ${TAG}"
+        git push origin "${TAG}"
+
+    - name: Create GitHub Release
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        TAG="v${{ inputs.version }}"
+        gh release create "${TAG}" \
+          --title "Release ${TAG}" \
+          --generate-notes \
+          --latest
